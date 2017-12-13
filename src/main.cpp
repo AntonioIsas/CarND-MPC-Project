@@ -85,7 +85,7 @@ int main() {
         string event = j[0].get<string>();
         if (event == "telemetry") {
           // j[1] is the data JSON object
-          vector<double> ptsx = j[1]["ptsx"];
+          vector<double>ptsx = j[1]["ptsx"];
           vector<double> ptsy = j[1]["ptsy"];
           double px = j[1]["x"];
           double py = j[1]["y"];
@@ -98,8 +98,31 @@ int main() {
           * Both are in between [-1, 1].
           *
           */
-          double steer_value;
-          double throttle_value;
+
+          //convert to local coordinates car at (0,0)
+          for(unsigned int i=0; i<ptsx.size(); i++){
+            double shift_x = ptsx[i]-px;
+            double shift_y = ptsy[i]-py;
+
+            ptsx[i] = (shift_x*cos(0-psi)-shift_y*sin(0-psi));
+            ptsy[i] = (shift_x*sin(0-psi)+shift_y*cos(0-psi));
+          }
+
+          Eigen::Map<Eigen::VectorXd> Eptsx(&ptsx[0], 6);
+          Eigen::Map<Eigen::VectorXd> Eptsy(&ptsy[0], 6);
+
+          Eigen::VectorXd coeffs = polyfit(Eptsx, Eptsy, 3);
+
+          double cte = polyeval(coeffs, 0);
+          double epsi = -atan(coeffs[1]);
+
+          Eigen::VectorXd state(6);
+          state << 0, 0, 0, v, cte, epsi;
+
+          auto vars = mpc.Solve(state, coeffs);
+          const double Lf = 2.67;
+          double steer_value = vars[0]/ (deg2rad(25)*Lf);
+          double throttle_value = vars[1];
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
@@ -111,6 +134,11 @@ int main() {
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
 
+          for(unsigned int i=2; i<vars.size()-1;  i+=2){
+            mpc_x_vals.push_back( vars[i] );
+            mpc_y_vals.push_back( vars[i+1] );
+          }
+
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
 
@@ -120,6 +148,13 @@ int main() {
           //Display the waypoints/reference line
           vector<double> next_x_vals;
           vector<double> next_y_vals;
+
+          double inc = 3;
+          double points = 20;
+          for(unsigned int i=0; i<points;  i++){
+            next_x_vals.push_back( i*inc );
+            next_y_vals.push_back( polyeval(coeffs,i*inc) );
+          }
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
@@ -137,9 +172,10 @@ int main() {
           // Feel free to play around with this value but should be to drive
           // around the track with 100ms latency.
           //
-          // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
+          // TODO NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-          this_thread::sleep_for(chrono::milliseconds(100));
+          this_thread::sleep_for(chrono::milliseconds(00));
+
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {
