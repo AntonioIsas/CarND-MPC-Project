@@ -13,7 +13,7 @@ set(sources ./MPC.cpp ./main.cpp)
 
 include_directories(/usr/local/include)
 link_directories(/usr/local/lib)
-include_directories(src/Eigen-3.3)
+include_directories(./Eigen-3.3)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
@@ -26,4 +26,3 @@ endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 add_executable(mpc ${sources})
 
 target_link_libraries(mpc ipopt z ssl uv uWS)
-
