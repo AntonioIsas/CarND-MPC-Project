@@ -91,7 +91,10 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
+          double delta = j[1]["steering_angle"];
+          double a = j[1]["throttle"];
 
+          const double Lf = 2.67;
           /*
           * TODO: Calculate steering angle and throttle using MPC.
           *
@@ -116,11 +119,28 @@ int main() {
           double cte = polyeval(coeffs, 0);
           double epsi = -atan(coeffs[1]);
 
+          //Preedict position for latency
+          // Recall the equations for the model:
+          // x_[t+1] = x[t] + v[t] * cos(psi[t]) * dt
+          // y_[t+1] = y[t] + v[t] * sin(psi[t]) * dt
+          // psi_[t+1] = psi[t] + v[t] / Lf * delta[t] * dt
+          // v_[t+1] = v[t] + a[t] * dt
+          // cte[t+1] = f(x[t]) - y[t] + v[t] * sin(epsi[t]) * dt
+          // epsi[t+1] = psi[t] - psides[t] + v[t] * delta[t] / Lf * dt
+
+          double lat = 0.1;
+          double lat_px = v*lat;//px + v*cos(psi)*lat;
+          double lat_py = 0;//py + v*sin(psi)*lat;
+          double lat_psi = 0+v*delta*lat/Lf;//psi[t] + v[t] / Lf * delta[t] * dt
+          // v_[t+1] = v[t] + a[t] * dt
+          // cte[t+1] = f(x[t]) - y[t] + v[t] * sin(epsi[t]) * dt
+          // epsi[t+1] = psi[t] - psides[t] + v[t] * delta[t] / Lf * dt
+
           Eigen::VectorXd state(6);
-          state << 0, 0, 0, v, cte, epsi;
+          //state << 0, 0, 0, v, cte, epsi;
+          state << lat_px, lat_py, lat_psi, v, cte, epsi;
 
           auto vars = mpc.Solve(state, coeffs);
-          const double Lf = 2.67;
           double steer_value = vars[0]/ (deg2rad(25)*Lf);
           double throttle_value = vars[1];
 
@@ -174,7 +194,7 @@ int main() {
           //
           // TODO NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-          this_thread::sleep_for(chrono::milliseconds(00));
+          this_thread::sleep_for(chrono::milliseconds(100));
 
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }

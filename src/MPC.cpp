@@ -6,9 +6,9 @@
 using CppAD::AD;
 
 // TODO: Set the timestep length and duration
-size_t N = 10;
+size_t N = 15;
 double dt = 0.05;
-double ref_v = 70;
+double ref_v = 40;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -21,8 +21,6 @@ double ref_v = 70;
 //
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
-
-
 
 
 size_t x_start = 0;
@@ -54,8 +52,8 @@ class FG_eval {
 
     // The part of the cost based on the reference state.
     for (unsigned int t = 0; t < N; t++) {
-      fg[0] += 3000*CppAD::pow(vars[cte_start + t], 2);
-      fg[0] += 3000*CppAD::pow(vars[epsi_start + t], 2);
+      fg[0] += 1*CppAD::pow(vars[cte_start + t], 2);
+      fg[0] += 1*CppAD::pow(vars[epsi_start + t], 2);
       fg[0] += 1*CppAD::pow(vars[v_start + t] - ref_v, 2);
     }
 
@@ -91,6 +89,7 @@ class FG_eval {
 
       // The state at time t.
       AD<double> x0 = vars[x_start + t - 1];
+
       AD<double> y0 = vars[y_start + t - 1];
       AD<double> psi0 = vars[psi_start + t - 1];
       AD<double> v0 = vars[v_start + t - 1];
