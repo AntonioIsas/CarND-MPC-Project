@@ -92,7 +92,6 @@ int main() {
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
           double delta = j[1]["steering_angle"];
-          double a = j[1]["throttle"];
 
           const double Lf = 2.67;
           /*
@@ -120,21 +119,10 @@ int main() {
           double epsi = -atan(coeffs[1]);
 
           //Preedict position for latency
-          // Recall the equations for the model:
-          // x_[t+1] = x[t] + v[t] * cos(psi[t]) * dt
-          // y_[t+1] = y[t] + v[t] * sin(psi[t]) * dt
-          // psi_[t+1] = psi[t] + v[t] / Lf * delta[t] * dt
-          // v_[t+1] = v[t] + a[t] * dt
-          // cte[t+1] = f(x[t]) - y[t] + v[t] * sin(epsi[t]) * dt
-          // epsi[t+1] = psi[t] - psides[t] + v[t] * delta[t] / Lf * dt
-
-          double lat = 0.1;
-          double lat_px = v*lat;//px + v*cos(psi)*lat;
-          double lat_py = 0;//py + v*sin(psi)*lat;
-          double lat_psi = 0+v*delta*lat/Lf;//psi[t] + v[t] / Lf * delta[t] * dt
-          // v_[t+1] = v[t] + a[t] * dt
-          // cte[t+1] = f(x[t]) - y[t] + v[t] * sin(epsi[t]) * dt
-          // epsi[t+1] = psi[t] - psides[t] + v[t] * delta[t] / Lf * dt
+          double const lat = 0.1;
+          double lat_px = v*lat;
+          double lat_py = 0;
+          double lat_psi = -v*delta*lat/Lf;
 
           Eigen::VectorXd state(6);
           //state << 0, 0, 0, v, cte, epsi;
